@@ -12,7 +12,7 @@ import (
 
 func main() {
 	if len(os.Args) < 2 {
-		fmt.Println("Add the name of the package in the run folder you want to run,\n",
+		fmt.Println("Add the name of the package in the run folder you want to run,\n" +
 			"or run 'run new {packagename}'. ")
 		return
 	}
