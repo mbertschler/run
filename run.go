@@ -21,36 +21,36 @@ func main() {
 		return
 	}
 	var pkg = os.Args[1]
-	pkg = findPackageFolder(pkg)
+	pkg, bin := findPackageFolder(pkg)
 	err := runCmd("go install " + pkg)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
-	err = runCmd(pkg + " " + strings.Join(os.Args[2:], " "))
+	err = runCmd(bin + " " + strings.Join(os.Args[2:], " "))
 	if err != nil {
 		fmt.Println(err)
 	}
 }
 
-func findPackageFolder(pkg string) string {
+func findPackageFolder(in string) (pkg string, bin string) {
 	gopath := os.Getenv("GOPATH")
 	gopaths := strings.Split(gopath, ":")
 	for _, gp := range gopaths {
 		dir := filepath.Join(gp, "src", "run", pkg)
 		info, err := os.Stat(dir)
 		if err == nil && info.IsDir() {
-			return "run/" + pkg
+			return "run/" + in, in
 		}
-		dir = filepath.Join(gp, "src", pkg)
+		dir = filepath.Join(gp, "src", in)
 		info, err = os.Stat(dir)
 		if err == nil && info.IsDir() {
-			return pkg
+			return in, in
 		}
 	}
 	fmt.Println("couldn't find the source folder for the package", pkg)
 	os.Exit(1)
-	return ""
+	return "", ""
 }
 
 func runCmd(cmd string) error {
