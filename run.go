@@ -37,7 +37,7 @@ func findPackageFolder(in string) (pkg string, bin string) {
 	gopath := os.Getenv("GOPATH")
 	gopaths := strings.Split(gopath, ":")
 	for _, gp := range gopaths {
-		dir := filepath.Join(gp, "src", "run", pkg)
+		dir := filepath.Join(gp, "src", "run", in)
 		info, err := os.Stat(dir)
 		if err == nil && info.IsDir() {
 			return "run/" + in, in
