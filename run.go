@@ -36,12 +36,12 @@ func Main(args []string) int {
 		fmt.Println(err)
 		return 1
 	}
-	err = runCmd("go install " + pkg)
+	err = runCmd("go", "install", pkg)
 	if err != nil {
 		fmt.Println(err)
 		return 1
 	}
-	err = runCmd(bin + " " + strings.Join(args[1:], " "))
+	err = runCmd(append([]string{bin}, args[1:]...)...)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -74,9 +74,8 @@ func findPackageFolder(in string) (pkg string, bin string, err error) {
 	return "", "", errors.New(fmt.Sprint("couldn't find the source folder for the package ", in))
 }
 
-func runCmd(cmd string) error {
-	parts := strings.Fields(cmd)
-	c := exec.Command(parts[0], parts[1:]...)
+func runCmd(cmd ...string) error {
+	c := exec.Command(cmd[0], cmd[1:]...)
 	c.Stdout = os.Stdout
 	c.Stderr = os.Stderr
 	c.Stdin = os.Stdin
@@ -107,9 +106,9 @@ func newPackage(name string) error {
 		return err
 	}
 	if runtime.GOOS == "darwin" {
-		runCmd("open " + file)
+		runCmd("open", file)
 	} else {
-		runCmd("xdg-open " + file)
+		runCmd("xdg-open", file)
 	}
 	return nil
 }
