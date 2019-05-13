@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -79,7 +78,6 @@ func findPackageFolder(in string) (pkg string, bin string, err error) {
 }
 
 func runCmd(dir string, cmd ...string) error {
-	log.Println("dir:", dir, "cmd:", cmd)
 	c := exec.Command(cmd[0], cmd[1:]...)
 	c.Dir = dir
 	c.Stdout = os.Stdout
@@ -111,9 +109,9 @@ func newPackage(name string) error {
 		return err
 	}
 	if runtime.GOOS == "darwin" {
-		runCmd("open", file)
+		runCmd("/", "open", file)
 	} else {
-		runCmd("xdg-open", file)
+		runCmd("/", "xdg-open", file)
 	}
 	return nil
 }
