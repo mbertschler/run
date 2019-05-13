@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -13,10 +14,19 @@ import (
 
 func main() {
 	args := os.Args[1:]
-	os.Exit(Main(args))
+	os.Exit(command(args))
 }
 
-func Main(args []string) int {
+func runDir() string {
+	path := os.Getenv("GORUNDIR")
+	if len(path) == 0 {
+		fmt.Println("GORUNDIR environment variable needs to be set to scripts directory")
+		os.Exit(1)
+	}
+	return path
+}
+
+func command(args []string) int {
 	if len(args) < 1 {
 		fmt.Println("Add the name of the package in the run folder you want to run,\n" +
 			"or run 'run new {packagename}'. ")
@@ -30,18 +40,19 @@ func Main(args []string) int {
 		}
 		return 0
 	}
+
 	var pkg = args[0]
-	pkg, bin, err := findPackageFolder(pkg)
+	dir, bin, err := findPackageFolder(pkg)
 	if err != nil {
 		fmt.Println(err)
 		return 1
 	}
-	err = runCmd("go", "install", pkg)
+	err = runCmd(dir, "go", "install")
 	if err != nil {
 		fmt.Println(err)
 		return 1
 	}
-	err = runCmd(append([]string{bin}, args[1:]...)...)
+	err = runCmd(dir, append([]string{bin}, args[1:]...)...)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -49,33 +60,28 @@ func Main(args []string) int {
 }
 
 func findPackageFolder(in string) (pkg string, bin string, err error) {
-	gopath := os.Getenv("GOPATH")
-	gopaths := strings.Split(gopath, ":")
-	for _, gp := range gopaths {
-		dir := filepath.Join(gp, "src", "run", in)
-		var bin = in
-		lastSlash := strings.LastIndex(in, "/")
-		if lastSlash != -1 {
-			if lastSlash == len(in)-1 {
-				return "", "", errors.New(fmt.Sprint("package name can't end with a slash", in))
-			}
-			bin = in[lastSlash+1:]
+	path := runDir()
+	dir := filepath.Join(path, in)
+	bin = in
+	lastSlash := strings.LastIndex(in, "/")
+	if lastSlash != -1 {
+		if lastSlash == len(in)-1 {
+			return "", "", errors.New(fmt.Sprint("package name can't end with a slash", in))
 		}
-		info, err := os.Stat(dir)
-		if err == nil && info.IsDir() {
-			return "run/" + in, bin, nil
-		}
-		dir = filepath.Join(gp, "src", in)
-		info, err = os.Stat(dir)
-		if err == nil && info.IsDir() {
-			return in, bin, nil
-		}
+		bin = in[lastSlash+1:]
 	}
+	info, err := os.Stat(dir)
+	if err == nil && info.IsDir() {
+		return dir, bin, nil
+	}
+
 	return "", "", errors.New(fmt.Sprint("couldn't find the source folder for the package ", in))
 }
 
-func runCmd(cmd ...string) error {
+func runCmd(dir string, cmd ...string) error {
+	log.Println("dir:", dir, "cmd:", cmd)
 	c := exec.Command(cmd[0], cmd[1:]...)
+	c.Dir = dir
 	c.Stdout = os.Stdout
 	c.Stderr = os.Stderr
 	c.Stdin = os.Stdin
@@ -89,10 +95,9 @@ func main() {
 }`
 
 func newPackage(name string) error {
-	gopath := os.Getenv("GOPATH")
-	gopath = strings.Split(gopath, ":")[0]
-	dir := filepath.Join(gopath, "src", "run", name)
-	file := filepath.Join(gopath, "src", "run", name, name+".go")
+	path := runDir()
+	dir := filepath.Join(path, name)
+	file := filepath.Join(path, name, name+".go")
 	info, err := os.Stat(file)
 	if err == nil && !info.IsDir() {
 		return errors.New(fmt.Sprint("The file ", file, " already exists, doing nothing."))
