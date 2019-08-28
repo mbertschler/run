@@ -19,8 +19,12 @@ func main() {
 func runDir() string {
 	path := os.Getenv("GORUNDIR")
 	if len(path) == 0 {
-		fmt.Println("GORUNDIR environment variable needs to be set to scripts directory")
-		os.Exit(1)
+		path = os.Getenv("GOPATH")
+		if len(path) == 0 {
+			fmt.Println("GORUNDIR or GOPATH environment variable needs to be set to scripts directory")
+			os.Exit(1)
+		}
+		path = filepath.Join(path, "src")
 	}
 	return path
 }
