@@ -28,21 +28,22 @@ func runDir() string {
 func command(args []string) int {
 	if len(args) < 1 {
 		fmt.Println("Add the name of the package in the run folder you want to run,\n" +
-			"or run 'run new {packagename}'. ")
+			"or run 'run {packagename} new'. ")
 		return 1
-	}
-	if len(args) > 1 && args[0] == "new" {
-		err := newPackage(args[1])
-		if err != nil {
-			fmt.Println(err)
-			return 1
-		}
-		return 0
 	}
 
 	var pkg = args[0]
 	dir, bin, err := findPackageFolder(pkg)
 	if err != nil {
+		if len(args) > 1 && args[1] == "new" {
+			err := newPackage(args[0])
+			if err != nil {
+				fmt.Println(err)
+				return 1
+			}
+			return 0
+		}
+
 		fmt.Println(err)
 		return 1
 	}
@@ -74,7 +75,8 @@ func findPackageFolder(in string) (pkg string, bin string, err error) {
 		return dir, bin, nil
 	}
 
-	return "", "", errors.New(fmt.Sprint("couldn't find the source folder for the package ", in))
+	return "", "", errors.New(fmt.Sprint("couldn't find the source folder for the package ",
+		in, " (create it with \"run ", in, " new\")"))
 }
 
 func runCmd(dir string, cmd ...string) error {
