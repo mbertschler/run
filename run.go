@@ -4,11 +4,11 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
-	"strings"
 )
 
 func main() {
@@ -64,23 +64,52 @@ func command(args []string) int {
 }
 
 func findPackageFolder(in string) (pkg string, bin string, err error) {
-	path := runDir()
-	dir := filepath.Join(path, in)
-	bin = in
-	lastSlash := strings.LastIndex(in, "/")
-	if lastSlash != -1 {
-		if lastSlash == len(in)-1 {
-			return "", "", errors.New(fmt.Sprint("package name can't end with a slash", in))
-		}
-		bin = in[lastSlash+1:]
+	// convert to absolute path (if necessary)
+	dir, err := filepath.Abs(in)
+	if err != nil {
+		return "", "", err
 	}
+
+	// get package name from absolute path (also works if in is ".")
+	bin = filepath.Base(dir)
+
+	// check if path exists and contains go files
 	info, err := os.Stat(dir)
 	if err == nil && info.IsDir() {
+		if !containsGoFiles(dir) {
+			return "", "", fmt.Errorf("%s does not contain any go files", dir)
+		}
 		return dir, bin, nil
 	}
 
-	return "", "", errors.New(fmt.Sprint("couldn't find the source folder for the package ",
-		in, " (create it with \"run ", in, " new\")"))
+	// try package name in gorundir
+	dir = filepath.Join(runDir(), in)
+	info, err = os.Stat(dir)
+	if err == nil && info.IsDir() {
+		if !containsGoFiles(dir) {
+			return "", "", fmt.Errorf("%s does not contain any go files", dir)
+		}
+		return dir, bin, nil
+	}
+
+	// no package found
+	return "", "", fmt.Errorf(`couldn't find the source folder for package %s (create it with "run %s new")`,
+		in, in)
+}
+
+func containsGoFiles(path string) bool {
+	files, err := ioutil.ReadDir(path)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	for _, f := range files {
+		if filepath.Ext(f.Name()) == ".go" {
+			return true
+		}
+	}
+
+	return false
 }
 
 func runCmd(dir string, cmd ...string) error {
