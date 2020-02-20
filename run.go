@@ -56,7 +56,7 @@ func command(args []string) int {
 		fmt.Println(err)
 		return 1
 	}
-	err = runCmd(dir, append([]string{bin}, args[1:]...)...)
+	err = runCmd(".", append([]string{bin}, args[1:]...)...)
 	if err != nil {
 		fmt.Println(err)
 	}
