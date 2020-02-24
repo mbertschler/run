@@ -37,7 +37,7 @@ in your editor. This is useful for small tools and scripting applications.
 
 ```bash
 # create a new package:
-run new newcmd
+run newcmd new
 
 # build and run this package:
 run newcmd
